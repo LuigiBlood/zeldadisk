@@ -3,87 +3,37 @@
 
 //Uses ARM9 bass
 
+//Main Disk Assembly
+
+print "Assembling Custom Zelda Disk Expansion...\n"
+
+if {defined DEV} {
+  print "Development Version - "
+} else {
+  print "Retail Version - "
+}
+
+if {defined USA} {
+  print "USA Region\n"
+} else {
+  print "JPN Region\n"
+}
+
 arch n64.cpu
 endian msb
 output "EZLJ_new.ndd", create
 
 include "N64_CPUREGS.asm"
 
-macro seek(n) {
-  origin {n}
-}
-
-//FILL
-seek(0x0)
-fill 0x3DEC800
-
-//System Area
-seek(0x0)
-//System Data
-define x(0)
-while {x} < 14 {
-  define y(0)
-  while {y} < 86 { //232 * 85
-  
-    dw 0xE848D316	//Disk Region
-    db 0x10
-    db 0x11		//Disk Type
-    dh 0x0001		//Boot Blocks Load
-    db 0x0C, 0x18, 0x24, 0x30, 0x3C, 0x48, 0x54, 0x60, 0x6C, 0x78, 0x84, 0x90, 0x9C, 0xA8, 0xB4, 0xC0
-    dw 0xFFFFFFFF
-    dw 0x80000400
-    db 0x10, 0x16, 0x1C, 0x22, 0x28, 0x2E, 0x34, 0x36, 0x37, 0x40, 0x46, 0x4C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x73
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x92
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x6F
-    db 0x56, 0x5C, 0x62, 0x68, 0x6E, 0x74, 0x7A, 0x7F, 0x86, 0x8C, 0x92, 0x98
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x88
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x69
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x93
-    db 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C, 0x44, 0x4C, 0x54, 0x5C
-    dh 0x061E, 0x07AE, 0x10C3, 0xFFFF
-    
-    evaluate y({y} + 1)
-  }
-  evaluate x({x} + 1)
-}
-
-//Disk ID
-define x(14)
-while {x} < 24 {
-  define y(0)
-  while {y} < 86 { //232 * 85
-  
-    db "EZLJ"	//Game ID code
-    db 0	//Version 0
-    db 0	//Disk Number 0
-    db 0	//Does not use MFS
-    db 0	//Disk Use
-    db "URAZELDA"
-    db "ITISREAL"
-    db "01"
-    db "WOAHHH"
-    
-    fill 200
-    
-    evaluate y({y} + 1)
-  }
-  evaluate x({x} + 1)
-}
+include "EZLJ_DISK_RAM.asm"
+include "EZLJ_DISK_Macros.asm"
+include "EZLJ_DISK_System.asm"
+include "EZLJ_DISK_FileSystem.asm"
 
 //LBA 25
-seek(0x785C8)
+print "- Assemble Main Disk Code...\n"
 
-constant DDHOOK_RAM(0x80410000)
-constant DDHOOK_GPRAM(0x80400000)
-constant DDHOOK_NESTEST(0x80440000)
+seek(0x785C8)
 
 base DDHOOK_RAM
 
@@ -100,23 +50,23 @@ dw 0x00000000			//18: ???
 dw 0x00000000			//1C: 
 dw 0x00000000			//20: 
 dw 0x00000000			//24: 
-dw 0x00000000			//28: map_grand_static & map_i_static Hook
+dw 0x00000000			//28: map_i_static Replacement
 dw 0x00000000			//2C: 
 dw 0x00000000			//30: 
-dw 0x00000000			//34: (Unused)
-dw 0x00000000			//38: (Unused)
-dw 0x00000000			//3C: ???
+dw 0x00000000			//34:
+dw 0x00000000			//38:
+dw 0x00000000			//3C:
 dw 0x00000000			//40: 
-dw 0x00000000			//44: (Unused)
-dw (ddhook_scenedetect_real)	//48: Scene Entry Hook
-dw 0x00000000			//4C: (Unused)
-dw 0x00000000			//50: (Unused)
-dw 0x00000000			//54: "game_play" game state entrypoint (Cutscenes?)
-dw (ddhook_text_table)		//58: Message Table Replacement Setup Hook
-dw 0x00000000			//5C: (Unused)
-dw 0x00000000			//60: staff_message_data_static Load Hook
-dw 0x00000000			//64: jpn_message_data_static Load Hook
-dw (ddhook_textUSload)		//68: nes_message_data_static Load Hook
+dw 0x00000000			//44: map_48x85_static Replacement
+dw (ddhook_scenedetect_real)	//48: Scene Entry Replacement
+dw 0x00000000			//4C:
+dw 0x00000000			//50:
+dw (ddhook_removecutscene)	//54: Entrance Cutscene Replacement?
+dw (ddhook_text_table)		//58: Message Table Replacement Setup
+dw 0x00000000			//5C:
+dw 0x00000000			//60: staff_message_data_static Load
+dw 0x00000000			//64: jpn_message_data_static Load
+dw (ddhook_textUSload)		//68: nes_message_data_static Load
 dw 0x00000000			//6C: ???
 dw 0x00000000			//70: DMA ROM to RAM Hook
 dw 0x00000000			//74: ???
@@ -124,51 +74,47 @@ dw 0x00000000			//78: Set Cutscene Pointer (Intro Cutscenes)
 ddhook_list_end:
 
 //64DD Hook Initialization Code
-ddhook_setup:
-	//A0=p->p->n64dd_Func_801C7C1C (USEFUL! Disk read function)
-	//800FEE70 - Address Table
-	//	+0x0 = 801C7C1C
+ddhook_setup: {
+	//Arguments:
+	//A0=p->Address Table
+	//800FEE70 (NTSC 1.0) - Address Table
+	//	+0x0 = n64dd_Func_801C7C1C (USEFUL! Disk read function)
 	//	+0x50 = osSendMesg
 	//	+0x88 = Save Context
-	//8011A5D0 - Save Context
+	//8011A5D0 (NTSC 1.0) - Save Context
 	//	+0x1409 = Language (8011B9D9)
-	
-	//n64dd_Func_801C7C1C(destination, source, size)
 	
 	addiu sp,sp,-0x10
 	sw ra,4(sp)
 	
-	//Change language to English
-	lw a1,0x88(a0)		//Get Save Context Address
-	addiu a1,a1,0x1409	//Language Byte
-	ori a2,0,1
-	sb a2,0(a1)		//Set the game into English (1)
-	
-	//save pointer to 801C7C1C
-	li a3,(DDHOOK_GPRAM)
-	lw a2,0x50(a0)		//Store osSendMesg callback address
-	sw a2,4(a3)
-	lw a0,0(a0)		//Store n64dd_Func_801C7C1C callback address (Disk Load function)
+	//Save Zelda Disk Address Table's Address for later usage
+	li a3,(DDHOOK_ADDRTABLE)
 	sw a0,0(a3)
 	
-	or a3,0,a0
+	//Save Context Change
+	n64dd_LoadAddress(a1, {CZLJ_SaveContext})
+	ori a2,0,1
+	sb a2,0x1409(a1)	//Set the game into English (1)
+	
+	addiu a2,0,0
+	sw a2,0(a1)		//Scene ID = 0
+	sw a2,4(a1)		//Adult
+	sw a2,8(a1)		//No Cutscene
+	nop
 	
 	//Load text data into RAM (avoid music stop)
-	li a1,0x00966000	//A1=00966000 (Offset)
-	li a2,0x00039000	//A2=00039000 (Size)
-	li a0,DDHOOK_NESTEST	//A0=DDHOOK_NESTEST (Dest)
-	jalr a3			//read from disk
-				//n64dd_Func_801C7C1C(DDHOOK_NESTEST, 0x966000, 0x39000)
-	nop
+	n64dd_DiskLoad(DDHOOK_TEXTDATA, 0x966000, 0x39000)
 	
 	lw ra,4(sp)
 	addiu sp,sp,0x10
 	jr ra
 	nop
+}
 
 //nes_message_data_static Load Hook
-ddhook_textUSload:
-	//A0=p->Text Heap
+ddhook_textUSload: {
+	//Arguments:
+	//A0=p->Message Context
 	//	+0 = Offset
 	//	+4 = Size
 	//	+DC88 = Destination
@@ -177,29 +123,29 @@ ddhook_textUSload:
 	
 	lw a2,4(a0) 		//A2 = Size
 	lw a1,0(a0)		//A1 = Offset
-	li a3,DDHOOK_NESTEST	//A3 = DDHOOK_NESTEST
+	li a3,DDHOOK_TEXTDATA	//A3 = DDHOOK_TEXTDATA
 	addu a1,a1,a3		//A1 = A3 + Offset
 	ori a3,0,0xDC88
 	addu a0,a0,a3		//A0 = RAM Dest
 	
 	//Copy Text Data from RAM to where it wants
 	//Avoid hang from loading from disk directly and stop the music
-ddhook_textUSloop:
-	lb a3,0(a1)
+     -; lb a3,0(a1)
 	sb a3,0(a0)
 	addiu a0,a0,1
 	addiu a1,a1,1
 	subi a2,a2,1
-	bnez a2,ddhook_textUSloop
+	bnez a2,-
 	
 	lw ra,4(sp)
 	addiu sp,sp,0x10
 	jr ra
 	nop
+}
 
 //Message Table Replacement Setup Hook
-constant DDHOOK_MESSAGETABLENES(0x80420000)
-ddhook_text_table:
+ddhook_text_table: {
+	//Arguments:
 	//A0=p->p->jpn_message_data_static table
 	//A1=p->p->nes_message_data_static table
 	//A2=p->p->staff_message_data_static table
@@ -207,48 +153,53 @@ ddhook_text_table:
 	addiu sp,sp,-0x10
 	sw ra,4(sp)
 	
-	li a0,DDHOOK_MESSAGETABLENES
-	sw a0,0(a1)		//Change nes_message_data_static pointer (A0 = Destination)
-	li a1,0x00008004	//A1=Source
-	li a2,0x421C		//A2=Size
+	li a0,DDHOOK_TEXTTABLE
+	sw a0,0(a1)		//Change nes_message_data_static pointer
 	
-	li a3,(DDHOOK_GPRAM)
-	lw a3,0(a3)
-	jalr a3			//read from disk
-	nop
+	n64dd_DiskLoad(DDHOOK_TEXTTABLE, 0x8004, 0x421C)
 	
 	lw ra,4(sp)
 	addiu sp,sp,0x10
 	jr ra
 	nop	
+}
 
 //Scene Entry Hook
-ddhook_scenedetect_real:
+ddhook_scenedetect_real: {
+	//Arguments:
 	//A0=Scene ID
 	//A1=p->Scene Table
+	//
+	//Return:
+	//V0=p->Scene Entry
+	
 	addiu sp,sp,-0x10
 	addiu a3,0,0x14
 	multu a0,a3
 	mflo a0
 	addu v0,a0,a1
-	bnez a0,ddhook_scenedetect_real_notdeku	//Scene 0 is Deku Tree, so enable the Room Loading Hook ONLY if that scene is being loaded
+	bnez a0,+	//Scene 0 is Deku Tree, so enable the Room Loading Hook ONLY if that scene is being loaded
 	nop
 	li a0,ddhook_list_start	
 	li a1,ddhook_roomload
 	sw a1,8(a0)
-	b ddhook_scenedetect_real_return
+	
+	li v0, ddhook_sceneentry_data
 	nop
-ddhook_scenedetect_real_notdeku:
-	li a0,ddhook_list_start
+	
+	b ++
+	nop
+     +; li a0,ddhook_list_start
 	sw 0,8(a0)
 	
-ddhook_scenedetect_real_return:
-	addiu sp,sp,0x10
+     +; addiu sp,sp,0x10
 	jr ra
 	nop
+}
 
 //Room Loading Hook
-ddhook_roomload:
+ddhook_roomload: {
+	//Arguments:
 	//A0=p->Global Context
 	//A1=p->Room Context
 	//A2=Room ID
@@ -261,7 +212,7 @@ ddhook_roomload:
 	sll a3,a2,3		//Room ID * 8
 	addu a2,a0,a3		//calculate offset from Room ID
 	lw a0,0x34(a1)		//A0=RAM Address
-	lw a3,0x8(a2)		//RoomEnd
+	lw a3,0x4(a2)		//RoomEnd
 	lw a1,0x0(a2)		//RoomStart (A1=VROM Address)
 	subu a2,a3,a1		//A2=Size
 	
@@ -270,8 +221,7 @@ ddhook_roomload:
 	sw a0,0x3C(a3)		//Store RAM Address
 	sw a2,0x40(a3)		//Store Size 
 	
-	li a3,(DDHOOK_GPRAM)
-	lw a3,0(a3)
+	n64dd_LoadAddress(a3, 0)
 	jalr a3			//read from disk
 	nop
 	
@@ -281,17 +231,38 @@ ddhook_roomload:
 	li a1,0			//OSMesg (osSendMesg A1)
 	li a2,0			//DON'T BLOCK until response
 	
-	li a3,(DDHOOK_GPRAM)
-	lw a3,4(a3)
-	jalr a3			//osSendMesg, to let know to the engine that the data is loaded
+	n64dd_LoadAddress(a3, {CZLJ_osSendMesg})
+	jalr a3			//osSendMesg, to let the engine know that the data is loaded and continue the game
 	nop
 	
 	lw ra,0x10(sp)
 	addiu sp,sp,0x20
 	jr ra
 	nop
+}
+
+//Remove Intro Cutscene (avoid softlock)
+ddhook_removecutscene: {
+	//Arguments:
+	//A0=p->Global Context
+	//
+	//Return:
+	//V0=Is Loaded?
+	addiu v0,0,1
+	jr ra
+	nop
+}
+
+//Scene Entries
+ddhook_sceneentry_data: {
+	n64dd_SceneEntry("TEST SCENE", 0x02000000, 0x02000390, 0x00000000, 0x00000000, 0x01, 0x13, 0x02)
+}
 
 ddhook_end:
+
+if (origin() >= 0x79628) {
+  error "\n\nFATAL ERROR: MAIN DISK CODE IS TOO LARGE.\nPlease reduce it and load the rest during 64DD Hook Initialization Code.\n"
+}
 
 //Initial loading from OoT File Start
 seek(0x79628)
@@ -299,27 +270,6 @@ dw (ddhook_start - ddhook_start)	//Source Start
 dw (ddhook_end - ddhook_start)		//Source End
 dw (ddhook_start)			//Dest Start
 dw (ddhook_end)				//Dest End
-dw (ddhook_list_start)
+dw (ddhook_list_start)			//Hook Table Address
 
-
-//Those files are taken from US 1.0 version
-seek(0x785C8 + 0x8000)
-insert "ezlj_nes_message_table.bin"
-
-seek(0x785C8 + 0x00966000)
-insert "ezlj_nes_message_data_static.bin"
-
-//parody message shit
-seek(0x9ED325)
-db 0x57, 0x6F, 0x77, 0x21, 0x20, 0x41, 0x20, 0x36, 0x34, 0x44, 0x44, 0x21, 0x21, 0x21, 0x04, 0x1A, 0x49, 0x74, 0x27, 0x73, 0x20, 0x61, 0x62, 0x6F, 0x75, 0x74, 0x20, 0x74, 0x69, 0x6D, 0x65, 0x20, 0x79, 0x6F, 0x75, 0x20, 0x75, 0x73, 0x65, 0x64, 0x20, 0x6F, 0x6E, 0x65
-
-seek(0x9ED39E)
-db 0x4C, 0x65, 0x74, 0x20, 0x6D, 0x65, 0x20, 0x68, 0x75, 0x6D, 0x70, 0x20, 0x6D, 0x79, 0x20, 0x72, 0x6F, 0x63, 0x6B, 0x20, 0x69, 0x6E, 0x20, 0x70, 0x65, 0x61, 0x63, 0x65, 0x21, 0x01, 0x53, 0x65, 0x72, 0x69, 0x6F, 0x75, 0x73, 0x6C, 0x79, 0x2C, 0x20, 0x6C, 0x6F, 0x73, 0x65, 0x72, 0x2C, 0x20, 0x79, 0x6F, 0x75, 0x27, 0x72, 0x65, 0x20, 0x72, 0x75, 0x69, 0x6E, 0x69, 0x6E, 0x67, 0x20, 0x69, 0x74, 0x21, 0x02
-
-//Those files are taken from PAL Master Quest ROM
-seek(0x785C8 + 0x02499000)
-//insert "ezlj_ydan_all_ntsc1.0.bin"
-insert "ezlj_ydan_scene_palmq.bin"
-
-seek(0x785C8 + 0x01F61000)
-insert "ezlj_ydan_rooms_palmq.bin"
+print "- Done!\n"
