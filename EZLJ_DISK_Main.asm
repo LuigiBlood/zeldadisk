@@ -8,15 +8,15 @@
 print "Assembling Custom Zelda Disk Expansion...\n"
 
 if {defined DEV} {
-  print "Development Version - "
+	print "Development Version - "
 } else {
-  print "Retail Version - "
+	print "Retail Version - "
 }
 
 if {defined USA} {
-  print "USA Region\n"
+	print "USA Region\n"
 } else {
-  print "JPN Region\n"
+	print "JPN Region\n"
 }
 
 arch n64.cpu
@@ -38,39 +38,39 @@ seek(0x785C8)
 base DDHOOK_RAM
 
 ddhook_start:
-db "URAZELDA"
+	db "URAZELDA"
 ddhook_list_start:
-dw (ddhook_setup)		//00: 64DD Hook
-dw 0x00000000			//04: 64DD Unhook
-dw 0x00000000			//08: Room Loading Hook
-dw 0x00000000			//0C: Scene Loading (???)
-dw 0x00000000			//10: "game_play" game state entrypoint
-dw 0x00000000			//14: Collision related
-dw 0x00000000			//18: ???
-dw 0x00000000			//1C: 
-dw 0x00000000			//20: 
-dw 0x00000000			//24: 
-dw 0x00000000			//28: map_i_static Replacement
-dw 0x00000000			//2C: 
-dw 0x00000000			//30: 
-dw 0x00000000			//34:
-dw 0x00000000			//38:
-dw 0x00000000			//3C:
-dw 0x00000000			//40: 
-dw 0x00000000			//44: map_48x85_static Replacement
-dw (ddhook_scenedetect_real)	//48: Scene Entry Replacement
-dw 0x00000000			//4C:
-dw 0x00000000			//50:
-dw (ddhook_removecutscene)	//54: Entrance Cutscene Replacement?
-dw (ddhook_text_table)		//58: Message Table Replacement Setup
-dw 0x00000000			//5C:
-dw 0x00000000			//60: staff_message_data_static Load
-dw 0x00000000			//64: jpn_message_data_static Load
-dw (ddhook_textUSload)		//68: nes_message_data_static Load
-dw 0x00000000			//6C: ???
-dw 0x00000000			//70: DMA ROM to RAM Hook
-dw 0x00000000			//74: ???
-dw 0x00000000			//78: Set Cutscene Pointer (Intro Cutscenes)
+	dw (ddhook_setup)		//00: 64DD Hook
+	dw 0x00000000			//04: 64DD Unhook
+	dw 0x00000000			//08: Room Loading Hook
+	dw 0x00000000			//0C: Scene Loading (???)
+	dw 0x00000000			//10: "game_play" game state entrypoint
+	dw 0x00000000			//14: Collision related
+	dw 0x00000000			//18: ???
+	dw 0x00000000			//1C: 
+	dw 0x00000000			//20: 
+	dw 0x00000000			//24: 
+	dw 0x00000000			//28: map_i_static Replacement
+	dw 0x00000000			//2C: 
+	dw 0x00000000			//30: 
+	dw 0x00000000			//34:
+	dw 0x00000000			//38:
+	dw 0x00000000			//3C:
+	dw 0x00000000			//40: 
+	dw 0x00000000			//44: map_48x85_static Replacement
+	dw (ddhook_scenedetect_real)	//48: Scene Entry Replacement
+	dw 0x00000000			//4C:
+	dw 0x00000000			//50:
+	dw (ddhook_removecutscene)	//54: Entrance Cutscene Replacement?
+	dw (ddhook_text_table)		//58: Message Table Replacement Setup
+	dw 0x00000000			//5C:
+	dw 0x00000000			//60: staff_message_data_static Load
+	dw 0x00000000			//64: jpn_message_data_static Load
+	dw (ddhook_textUSload)		//68: nes_message_data_static Load
+	dw 0x00000000			//6C: ???
+	dw 0x00000000			//70: DMA ROM to RAM Hook
+	dw 0x00000000			//74: ???
+	dw 0x00000000			//78: Set Cutscene Pointer (Intro Cutscenes)
 ddhook_list_end:
 
 //64DD Hook Initialization Code
@@ -98,7 +98,7 @@ ddhook_setup: {
 	
 	addiu a2,0,0
 	sw a2,0(a1)		//Scene ID = 0
-	sw a2,4(a1)		//Adult
+	sw a2,4(a1)		//Adult Link
 	sw a2,8(a1)		//No Cutscene
 	nop
 	
@@ -118,6 +118,7 @@ ddhook_textUSload: {
 	//	+0 = Offset
 	//	+4 = Size
 	//	+DC88 = Destination
+	
 	addiu sp,sp,-0x10
 	sw ra,4(sp)
 	
@@ -150,6 +151,7 @@ ddhook_text_table: {
 	//A1=p->p->nes_message_data_static table
 	//A2=p->p->staff_message_data_static table
 	//You can change the pointers.
+	
 	addiu sp,sp,-0x10
 	sw ra,4(sp)
 	
@@ -173,11 +175,16 @@ ddhook_scenedetect_real: {
 	//Return:
 	//V0=p->Scene Entry
 	
+	//TODO: Proper Scene Listing and Disk Detection
+	
 	addiu sp,sp,-0x10
+	
+	//Calculate Scene Entry Address
 	addiu a3,0,0x14
 	multu a0,a3
-	mflo a0
+	mflo a0		//(0x14 * Scene ID)
 	addu v0,a0,a1
+	
 	bnez a0,+	//Scene 0 is Deku Tree, so enable the Room Loading Hook ONLY if that scene is being loaded
 	nop
 	li a0,ddhook_list_start	
@@ -189,6 +196,8 @@ ddhook_scenedetect_real: {
 	
 	b ++
 	nop
+	
+	//If if it's Scene 0, add Room Loading Hook
      +; li a0,ddhook_list_start
 	sw 0,8(a0)
 	
@@ -221,7 +230,7 @@ ddhook_roomload: {
 	sw a0,0x3C(a3)		//Store RAM Address
 	sw a2,0x40(a3)		//Store Size 
 	
-	n64dd_LoadAddress(a3, 0)
+	n64dd_LoadAddress(a3, {CZLJ_DiskLoad})
 	jalr a3			//read from disk
 	nop
 	
@@ -248,6 +257,7 @@ ddhook_removecutscene: {
 	//
 	//Return:
 	//V0=Is Loaded?
+	
 	addiu v0,0,1
 	jr ra
 	nop

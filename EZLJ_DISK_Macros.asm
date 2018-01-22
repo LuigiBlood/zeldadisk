@@ -14,6 +14,7 @@ define CZLJ_osSendMesg(0x50)
 define CZLJ_SaveContext(0x88)
 
 macro n64dd_LoadAddress(register, offset) {
+	//800FEE70 - NTSC 1.0
 	li {register}, (DDHOOK_ADDRTABLE)
 	lw {register},0({register})
 	lw {register},{offset}({register})
