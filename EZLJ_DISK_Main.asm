@@ -19,6 +19,16 @@ if {defined USA} {
 	print "JPN Region\n"
 }
 
+if !{defined DISKTYPE} {
+	define DISKTYPE(0)
+}
+
+if ({DISKTYPE} > 6) {
+	error "\n\nERROR: Disk Type must be around 0-6.\n"
+}
+
+print "Disk Type - {DISKTYPE}\n"
+
 arch n64.cpu
 endian msb
 output "EZLJ_new.ndd", create
