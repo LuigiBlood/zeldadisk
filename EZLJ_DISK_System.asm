@@ -111,7 +111,7 @@ print "  - Disk ID\n"
 define x(14)
 while {x} < 24 {
   define y(0)
-  while {y} < 86 { //232 * 85
+  while {y} < 85 { //232 * 85
     //Game ID Code
     if {defined USA} {
       db "EZLE"	//USA
