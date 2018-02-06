@@ -20,7 +20,7 @@ seek(0x0)
 define x(0)
 while {x} < 14 {	//14 Blocks
   define y(0)
-  while {y} < 86 {	//232 * 85 (85 sectors)
+  while {y} < 85 {	//232 * 85 (85 sectors)
     //Disk Region
     if {defined DEV} {
       //Development (Sectors are 192 bytes long in the first 14 blocks)
