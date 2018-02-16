@@ -43,14 +43,13 @@ include "EZLJ_DISK_FileSystem.asm"
 //LBA 25
 print "- Assemble Main Disk Code...\n"
 
-seek(0x785C8)
-
+seekDisk(0)
 base DDHOOK_RAM
 
 ddhook_start:
 	db "URAZELDA"
 ddhook_list_start:
-	dw (ddhook_setup)		//00: 64DD Hook
+	dw (ddhook_setup | {KSEG1})	//00: 64DD Hook
 	dw 0x00000000			//04: 64DD Unhook
 	dw 0x00000000			//08: Room Loading Hook
 	dw 0x00000000			//0C: Scene Loading (???)
@@ -112,8 +111,15 @@ ddhook_setup: {
 	sw a2,8(a1)		//No Cutscene
 	nop
 	
+	//osWritebackDCache all of the expanded memory
+	lui a0, 0x8040
+	lui a1, 0x0040
+	n64dd_LoadAddress(v0, {CZLJ_osWritebackDCache})
+	jalr v0
+	nop
+	
 	//Load text data into RAM (avoid music stop)
-	n64dd_DiskLoad(DDHOOK_TEXTDATA, 0x966000, 0x39000)
+	n64dd_DiskLoad(DDHOOK_TEXTDATA, EZLJ_NES_MESSAGE_DATA_STATIC, 0x39000)
 	
 	lw ra,4(sp)
 	addiu sp,sp,0x10
@@ -130,7 +136,17 @@ ddhook_textUSload: {
 	//	+DC88 = Destination
 	
 	addiu sp,sp,-0x10
-	sw ra,4(sp)
+	sw ra,8(sp)
+	sw a0,4(sp)
+	
+	//osWritebackDCache all of the expanded memory
+	lui a0, 0x8040
+	lui a1, 0x0040
+	n64dd_LoadAddress(at, {CZLJ_osWritebackDCache})
+	jalr at
+	nop
+	
+	lw a0,4(sp)
 	
 	lw a2,4(a0) 		//A2 = Size
 	lw a1,0(a0)		//A1 = Offset
@@ -148,7 +164,7 @@ ddhook_textUSload: {
 	subi a2,a2,1
 	bnez a2,-
 	
-	lw ra,4(sp)
+	lw ra,8(sp)
 	addiu sp,sp,0x10
 	jr ra
 	nop
@@ -162,16 +178,37 @@ ddhook_text_table: {
 	//A2=p->p->staff_message_data_static table
 	//You can change the pointers.
 	
-	addiu sp,sp,-0x10
-	sw ra,4(sp)
+	addiu sp,sp,-0x20
+	sw ra,0x10(sp)
+	sw a0,0xC(sp)
+	sw a1,0x8(sp)
+	sw a2,0x4(sp)
+	
+	//osWritebackDCache all of the expanded memory
+	lui a0, 0x8040
+	lui a1, 0x0040
+	n64dd_LoadAddress(at, {CZLJ_osWritebackDCache})
+	jalr at
+	nop
+	
+	lw a0,0xC(sp)
+	lw a1,0x8(sp)
+	lw a2,0x4(sp)
 	
 	li a0,DDHOOK_TEXTTABLE
 	sw a0,0(a1)		//Change nes_message_data_static pointer
 	
-	n64dd_DiskLoad(DDHOOK_TEXTTABLE, 0x8004, 0x421C)
+	//osWritebackDCache all of the expanded memory
+	lui a0, 0x8040
+	lui a1, 0x0040
+	n64dd_LoadAddress(v0, {CZLJ_osWritebackDCache})
+	jalr v0
+	nop
 	
-	lw ra,4(sp)
-	addiu sp,sp,0x10
+	n64dd_DiskLoad(DDHOOK_TEXTTABLE, EZLJ_NES_MESSAGE_TABLE+4, 0x421C)
+	
+	lw ra,0x10(sp)
+	addiu sp,sp,0x20
 	jr ra
 	nop	
 }
@@ -224,8 +261,19 @@ ddhook_roomload: {
 	//A2=Room ID
 	
 	addiu sp,sp,-0x20
-	sw ra,0x10(sp) //4
-	sw a1,0x14(sp) //8
+	sw ra,0x10(sp)
+	sw a1,0x14(sp)
+	sw a2,0x18(sp)
+	
+	//osWritebackDCache all of the expanded memory
+	lui a0, 0x8040
+	lui a1, 0x0040
+	n64dd_LoadAddress(at, {CZLJ_osWritebackDCache})
+	jalr at
+	nop
+	
+	lw a1,0x14(sp)
+	lw a2,0x18(sp)
 	
 	lw a0,0x0134(a1)	//load Room List Pointer
 	sll a3,a2,3		//Room ID * 8
@@ -275,21 +323,21 @@ ddhook_removecutscene: {
 
 //Scene Entries
 ddhook_sceneentry_data: {
-	n64dd_SceneEntry("TEST SCENE", 0x02000000, 0x02000390, 0x00000000, 0x00000000, 0x01, 0x13, 0x02)
+	n64dd_SceneEntry("TEST SCENE", EZLJ_CUSTOM_SCENE00, EZLJ_CUSTOM_SCENE00_END, 0x00000000, 0x00000000, 0x01, 0x13, 0x02)
 }
 
 ddhook_end:
 
-if (origin() >= 0x79628) {
+if (origin() >= (0x785C8 + 0x1060)) {
   error "\n\nFATAL ERROR: MAIN DISK CODE IS TOO LARGE.\nPlease reduce it and load the rest during 64DD Hook Initialization Code.\n"
 }
 
 //Initial loading from OoT File Start
-seek(0x79628)
+seekDisk(0x1060)
 dw (ddhook_start - ddhook_start)	//Source Start
 dw (ddhook_end - ddhook_start)		//Source End
-dw (ddhook_start)			//Dest Start
-dw (ddhook_end)				//Dest End
-dw (ddhook_list_start)			//Hook Table Address
+dw (ddhook_start | {KSEG1})		//Dest Start
+dw (ddhook_end | {KSEG1})		//Dest End
+dw (ddhook_list_start | {KSEG1})	//Hook Table Address
 
 print "- Done!\n"

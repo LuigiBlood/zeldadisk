@@ -9,8 +9,16 @@ macro seek(n) {
 	origin {n}
 }
 
+macro seekDisk(n) {
+	//Seek from LBA 1
+	origin ({n} + 0x785C8)
+}
+
+define KSEG1(0xA0000000)
+
 define CZLJ_DiskLoad(0x00)
 define CZLJ_osSendMesg(0x50)
+define CZLJ_osWritebackDCache(0x70)
 define CZLJ_SaveContext(0x88)
 
 macro n64dd_LoadAddress(register, offset) {
